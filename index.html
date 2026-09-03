@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coast to Corn Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+<header>
+  <div class="nav wrap">
+    <a href="#top" class="brand">COAST TO CORN <span>PERFORMANCE</span></a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#coaches">Coaches</a></li>
+      <li><a href="#book" class="btn btn-gold nav-cta">Book Now</a></li>
+    </ul>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero" style="padding-top:0;">
+    <img class="hero-cover" src="/images/hero-cover.png" alt="Coast to Corn Baseball Performance — logo artwork blending an ocean wave, a baseball, a cornfield at sunset, and crossed bats over home plate">
+    <div class="hero-below">
+      <p class="lede"><strong style="color:var(--corn-gold); font-weight:700;">Individualized development. Intentional training. Lasting results.</strong><br><br>Coast to Corn Performance is a high-performance pitching development program built around the individual. We integrate throwing, strength, movement, arm care, and recovery into one cohesive system — giving athletes the environment, coaching, and freedom to explore their capabilities and elevate their performance.</p>
+      <div class="hero-ctas">
+        <a href="#book" class="btn btn-gold">Book a Lesson</a>
+        <a href="#coaches" class="btn btn-outline">Meet the Coaches</a>
+      </div>
+      <p style="margin-top:26px; font-size:14.5px; color:rgba(246,243,236,0.6); font-weight:600;">Built for athletes who want more.</p>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>One system. Two ways to train.</h2>
+        <p>Every session pulls from the same framework — throwing, strength, movement, arm care, and recovery — built around where each athlete needs it most.</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <h3>Individual Lesson</h3>
+          <div class="service-price">$85 <small>/ 45-min session</small></div>
+          <p>1-on-1 session fine tuning mechanical adjustments and strategies.</p>
+          <ul>
+            <li>Throwing, fielding &amp; hitting</li>
+            <li>Ages 9 and up, all skill levels</li>
+          </ul>
+        </div>
+        <div class="service-card">
+          <h3>Monthly Membership</h3>
+          <div class="service-price">$400 <small>/ month</small></div>
+          <p>A more individualized program — a written monthly plan for your athlete covering warm-up routines, plyo routines, throwing plans, lifting plans, and arm care. Ages 14 and up.</p>
+          <ul>
+            <li>Bullpens thrown on Trackman for real data and tracked progress</li>
+            <li>Unlimited visits — limited spots available</li>
+            <li>Work individually with John or Shelby</li>
+          </ul>
+          <p class="field-note">To get started, schedule a time slot below.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COACHES -->
+  <section id="coaches" class="on-dark">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Your coaching staff.</h2>
+        <p>Swap in real names, photos, and bios for each coach before this goes live.</p>
+      </div>
+      <div class="coach-grid" id="coachGrid"></div>
+    </div>
+  </section>
+
+  <!-- BOOKING -->
+  <section id="book">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Book a lesson.</h2>
+        <p>This booking flow is a working preview so you can see and test the experience end to end.</p>
+      </div>
+
+      <div class="booker">
+        <div class="booker-progress" id="progressBar"></div>
+        <div class="booker-body" id="bookerBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COACH AVAILABILITY PORTAL -->
+  <section id="coach-portal" class="on-dark" style="display:none;">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Coach availability.</h2>
+        <p>John and Shelby — sign in below to update your weekly hours. Changes apply immediately to the booking calendar above.</p>
+      </div>
+      <div class="booker" style="background:#fff;">
+        <div class="booker-body" id="portalBody" style="padding:36px;"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <h4>COAST TO CORN PERFORMANCE</h4>
+      <p>Baseball training for hitters, pitchers, and fielders who want to get better on purpose.<br>1120 NE Station Crossing Dr.<br>Grimes, IA 50111</p>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <p><a href="mailto:coast2corn@gmail.com">coast2corn@gmail.com</a><br>
+      John Swanda: <a href="tel:+15153135959">515-313-5959</a><br>
+      Shelby Lackey: <a href="tel:+12099860445">209-986-0445</a></p>
+    </div>
+    <div>
+      <h4>Follow</h4>
+      <p><a href="#">Instagram</a><br><a href="#">Facebook</a></p>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    &copy; 2026 Coast to Corn Performance. All rights reserved. &middot; <a href="#coach-portal" id="coachLoginLink">Coach Login</a>
+  </div>
+</footer>
+
+<script type="module" src="/src/main.js"></script>
+
+</body>
+</html>
