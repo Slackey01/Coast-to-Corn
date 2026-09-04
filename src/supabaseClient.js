@@ -44,6 +44,19 @@ export async function signOutCoach() {
 }
 
 // ------------------------------------------------------------
+// Coach directory (public — used by the marketing site + booking flow)
+// ------------------------------------------------------------
+
+export async function getAllCoaches() {
+  const { data, error } = await supabase
+    .from('coaches')
+    .select('id, name, role, photo_url, bio');
+
+  if (error) throw error;
+  return data;
+}
+
+// ------------------------------------------------------------
 // Availability helpers
 // ------------------------------------------------------------
 

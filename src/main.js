@@ -1,4 +1,4 @@
-import { coaches, renderCoachBio } from './coachData.js';
+import { coaches, renderCoachBio, loadCoaches } from './coachData.js';
 import { fmtDate, fmtHour } from './format.js';
 import { showCoachPortal, initCoachPortal } from './coachPortal.js';
 
@@ -14,20 +14,23 @@ navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
 }));
 
 /* ---------------- Coach marketing grid ---------------- */
-const coachGrid = document.getElementById('coachGrid');
-coaches.forEach(c => {
-  const el = document.createElement('div');
-  el.className = 'coach-card';
-  const photoHTML = c.photo ? `<img src="${c.photo}" alt="${c.name}">` : `<span>PHOTO</span>`;
-  el.innerHTML = `
-    <div class="coach-photo">${photoHTML}</div>
-    <div class="coach-body">
-      <h3>${c.name}</h3>
-      <div class="coach-role">${c.role}</div>
-      ${renderCoachBio(c)}
-    </div>`;
-  coachGrid.appendChild(el);
-});
+function renderCoachGrid() {
+  const coachGrid = document.getElementById('coachGrid');
+  coachGrid.innerHTML = '';
+  coaches.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'coach-card';
+    const photoHTML = c.photo ? `<img src="${c.photo}" alt="${c.name}">` : `<span>PHOTO</span>`;
+    el.innerHTML = `
+      <div class="coach-photo">${photoHTML}</div>
+      <div class="coach-body">
+        <h3>${c.name}</h3>
+        <div class="coach-role">${c.role}</div>
+        ${renderCoachBio(c)}
+      </div>`;
+    coachGrid.appendChild(el);
+  });
+}
 
 /* ---------------- Booking state ---------------- */
 const lessonTypes = [
@@ -357,5 +360,21 @@ document.getElementById('coachLoginLink').addEventListener('click', (e) => {
   showCoachPortal();
 });
 
-render();
+async function bootstrap() {
+  document.getElementById('coachGrid').innerHTML = '<p class="field-note">Loading coaches…</p>';
+  document.getElementById('bookerBody').innerHTML = '<p class="field-note">Loading booking options…</p>';
+  try {
+    await loadCoaches();
+  } catch (err) {
+    console.error(err);
+    const errorHTML = '<p class="portal-status error">Could not load coaches. Try refreshing the page.</p>';
+    document.getElementById('coachGrid').innerHTML = errorHTML;
+    document.getElementById('bookerBody').innerHTML = errorHTML;
+    return;
+  }
+  renderCoachGrid();
+  render();
+}
+
+bootstrap();
 initCoachPortal();

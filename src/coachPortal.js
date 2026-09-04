@@ -258,7 +258,7 @@ async function saveAvailability(body) {
     portalDraft = draftFromRows(rows);
 
     // Keep the on-page booking preview above in sync with what was just saved.
-    const localCoach = coaches.find(c => c.dbId === coachId);
+    const localCoach = coaches.find(c => c.id === coachId);
     if (localCoach) {
       localCoach.pattern = rows.map(r => ({ day: r.day_of_week, start: r.start_hour, end: r.end_hour }));
     }
