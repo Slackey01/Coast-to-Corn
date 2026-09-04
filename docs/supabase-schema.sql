@@ -112,3 +112,16 @@ create policy "Coaches update their own bookings"
 create policy "Coaches delete their own bookings"
   on bookings for delete
   using (auth.uid() = coach_id);
+
+-- ============================================================
+-- ADDED AFTER INITIAL CREATION (see docs/booked-slots-view.sql)
+-- ============================================================
+-- The public booking calendar needs to know which slots are taken
+-- without seeing who booked them, so it reads this view instead of
+-- the `bookings` table directly.
+create or replace view booked_slots as
+  select coach_id, booking_date, booking_hour
+  from bookings
+  where status = 'confirmed';
+
+grant select on booked_slots to anon, authenticated;

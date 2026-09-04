@@ -1,6 +1,7 @@
 import { coaches, renderCoachBio, loadCoaches } from './coachData.js';
 import { fmtDate, fmtHour } from './format.js';
 import { showCoachPortal, initCoachPortal } from './coachPortal.js';
+import { createBooking, getBookedSlots } from './supabaseClient.js';
 
 /* ---------------- Mobile menu ---------------- */
 const menuToggle = document.getElementById('menuToggle');
@@ -51,8 +52,8 @@ let state = {
   slot: null, // { dateISO, hour }
   parentName: '', kidName: '', email: '', phone: '',
   cardName: '', cardNumber: '', cardExp: '', cardCvc: '',
-  bookedSlots: new Set(), // in-memory only for this preview
   confirmed: false,
+  bookingError: null,
 };
 
 function needsPayment() {
@@ -63,7 +64,7 @@ function getSteps() {
   return needsPayment() ? ['Lesson', 'Time', 'Details', 'Payment'] : ['Lesson', 'Time', 'Details', 'Confirm'];
 }
 
-function generateSlots(coach) {
+function generateSlots(coach, bookedKeys) {
   const out = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -74,8 +75,8 @@ function generateSlots(coach) {
     coach.pattern.filter(p => p.day === dow).forEach(p => {
       for (let h = p.start; h < p.end; h++) {
         const dateISO = date.toISOString().slice(0, 10);
-        const key = `${coach.id}|${dateISO}|${h}`;
-        if (!state.bookedSlots.has(key)) {
+        const key = `${dateISO}|${h}`;
+        if (!bookedKeys.has(key)) {
           out.push({ dateISO, hour: h, date });
         }
       }
@@ -127,7 +128,7 @@ function renderBody() {
         <button class="btn btn-dark" id="bookAnother" style="margin-top:20px;">Book Another Lesson</button>
       </div>`;
     document.getElementById('bookAnother').onclick = () => {
-      state = { ...state, step: 1, lessonType: null, coachId: null, isMember: null, paymentMethod: 'card', slot: null, confirmed: false };
+      state = { ...state, step: 1, lessonType: null, coachId: null, isMember: null, paymentMethod: 'card', slot: null, confirmed: false, bookingError: null };
       render();
     };
     return;
@@ -190,34 +191,8 @@ function renderBody() {
 
   else if (state.step === 2) {
     const coach = coaches.find(c => c.id === state.coachId);
-    const slots = generateSlots(coach);
-    const byDate = {};
-    slots.forEach(s => { (byDate[s.dateISO] = byDate[s.dateISO] || []).push(s); });
-
-    if (Object.keys(byDate).length === 0) {
-      body.innerHTML = '<p class="no-slots">No open slots in the next two weeks for this coach. In a live version, this would show the next available dates automatically.</p>';
-    } else {
-      Object.keys(byDate).sort().forEach(dateISO => {
-        const dayEl = document.createElement('div');
-        dayEl.className = 'day-block';
-        const dateObj = byDate[dateISO][0].date;
-        dayEl.innerHTML = `<div class="day-label">${fmtDate(dateObj)}</div>`;
-        const row = document.createElement('div');
-        row.className = 'slot-row';
-        byDate[dateISO].forEach(s => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          const isSel = state.slot && state.slot.dateISO === s.dateISO && state.slot.hour === s.hour;
-          btn.className = 'slot-btn' + (isSel ? ' selected' : '');
-          btn.textContent = fmtHour(s.hour);
-          btn.onclick = () => { state.slot = { dateISO: s.dateISO, hour: s.hour }; render(); };
-          row.appendChild(btn);
-        });
-        dayEl.appendChild(row);
-        body.appendChild(dayEl);
-      });
-    }
-    body.appendChild(navRow(true, !!state.slot));
+    body.innerHTML = '<p class="field-note">Checking open times…</p>';
+    renderStep2Slots(coach);
   }
 
   else if (state.step === 3) {
@@ -306,6 +281,14 @@ function renderBody() {
       body.appendChild(note);
     }
 
+    if (state.bookingError) {
+      const err = document.createElement('p');
+      err.className = 'portal-status error';
+      err.style.marginTop = '16px';
+      err.textContent = state.bookingError;
+      body.appendChild(err);
+    }
+
     const row = document.createElement('div');
     row.className = 'booker-nav';
     const back = document.createElement('button');
@@ -314,20 +297,97 @@ function renderBody() {
     back.onclick = () => { state.step -= 1; render(); };
     const confirm = document.createElement('button');
     confirm.className = 'btn btn-gold';
-    confirm.textContent = !payment
+    const confirmLabel = !payment
       ? 'Confirm & Reserve Session'
       : payingCash
         ? `Reserve — Pay ${priceLabel(lt)} Cash at Lesson`
         : `Confirm & Book — ${priceLabel(lt)}`;
-    confirm.onclick = () => {
-      const key = `${coach.id}|${state.slot.dateISO}|${state.slot.hour}`;
-      state.bookedSlots.add(key);
-      state.confirmed = true;
+    confirm.textContent = confirmLabel;
+    confirm.onclick = async () => {
+      state.bookingError = null;
+      confirm.disabled = true;
+      confirm.textContent = 'Booking…';
+      try {
+        await createBooking({
+          coach_id: coach.id,
+          lesson_type: state.lessonType,
+          is_member: state.lessonType === 'membership' && state.isMember === true,
+          payment_method: payment ? state.paymentMethod : null,
+          parent_name: state.parentName,
+          player_name: state.kidName,
+          email: state.email,
+          phone: state.phone || null,
+          booking_date: state.slot.dateISO,
+          booking_hour: state.slot.hour,
+        });
+        state.confirmed = true;
+      } catch (err) {
+        console.error(err);
+        const alreadyTaken = err.code === '23505' || /duplicate key|unique constraint/i.test(err.message || '');
+        state.bookingError = alreadyTaken
+          ? 'That time slot was just booked by someone else — go back and pick a different time.'
+          : (err.message || 'Could not complete your booking. Please try again.');
+      }
       render();
     };
     row.appendChild(back); row.appendChild(confirm);
     body.appendChild(row);
   }
+}
+
+async function renderStep2Slots(coach) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const toDate = new Date(today);
+  toDate.setDate(toDate.getDate() + 13);
+  const fromISO = today.toISOString().slice(0, 10);
+  const toISO = toDate.toISOString().slice(0, 10);
+
+  let bookedKeys = new Set();
+  try {
+    const booked = await getBookedSlots(coach.id, fromISO, toISO);
+    bookedKeys = new Set(booked.map(b => `${b.booking_date}|${b.booking_hour}`));
+  } catch (err) {
+    console.error(err);
+    // Only touch the DOM if the user hasn't navigated away while this was in flight.
+    if (state.step === 2 && state.coachId === coach.id) {
+      document.getElementById('bookerBody').innerHTML = '<p class="portal-status error">Could not check availability. Please try again.</p>';
+    }
+    return;
+  }
+  if (state.step !== 2 || state.coachId !== coach.id) return;
+
+  const body = document.getElementById('bookerBody');
+  body.innerHTML = '';
+
+  const slots = generateSlots(coach, bookedKeys);
+  const byDate = {};
+  slots.forEach(s => { (byDate[s.dateISO] = byDate[s.dateISO] || []).push(s); });
+
+  if (Object.keys(byDate).length === 0) {
+    body.innerHTML = '<p class="no-slots">No open slots in the next two weeks for this coach. In a live version, this would show the next available dates automatically.</p>';
+  } else {
+    Object.keys(byDate).sort().forEach(dateISO => {
+      const dayEl = document.createElement('div');
+      dayEl.className = 'day-block';
+      const dateObj = byDate[dateISO][0].date;
+      dayEl.innerHTML = `<div class="day-label">${fmtDate(dateObj)}</div>`;
+      const row = document.createElement('div');
+      row.className = 'slot-row';
+      byDate[dateISO].forEach(s => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isSel = state.slot && state.slot.dateISO === s.dateISO && state.slot.hour === s.hour;
+        btn.className = 'slot-btn' + (isSel ? ' selected' : '');
+        btn.textContent = fmtHour(s.hour);
+        btn.onclick = () => { state.slot = { dateISO: s.dateISO, hour: s.hour }; render(); };
+        row.appendChild(btn);
+      });
+      dayEl.appendChild(row);
+      body.appendChild(dayEl);
+    });
+  }
+  body.appendChild(navRow(true, !!state.slot));
 }
 
 function navRow(showBack, nextEnabled, onNext) {

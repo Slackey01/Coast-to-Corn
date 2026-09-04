@@ -105,9 +105,13 @@ export async function createBooking(booking) {
   if (error) throw error;
 }
 
+// Reads the `booked_slots` view rather than `bookings` directly — RLS
+// only lets a coach SELECT their own bookings (customer PII shouldn't
+// be publicly readable), but the public calendar still needs to know
+// which slots are taken. See docs/booked-slots-view.sql.
 export async function getBookedSlots(coachId, fromDate, toDate) {
   const { data, error } = await supabase
-    .from('bookings')
+    .from('booked_slots')
     .select('booking_date, booking_hour')
     .eq('coach_id', coachId)
     .gte('booking_date', fromDate)
